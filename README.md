@@ -1,5 +1,3 @@
-# Book Management Web App - QA Solution
-
 ## Overview
 
 This repository contains the complete Quality Assurance solution. It includes:
