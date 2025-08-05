@@ -1,0 +1,3666 @@
+{
+	"info": {
+		"_postman_id": "9fd421f4-a184-4897-a58b-270a9d96f424",
+		"name": "Tests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "46808379"
+	},
+	"item": [
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "GETs",
+					"item": [
+						{
+							"name": "Get User by Valid ID",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const randomSuffix = Math.floor(Math.random() * 100000);\r",
+											"const randomName = `TestUser_${randomSuffix}`;\r",
+											"\r",
+											"pm.environment.set('createdUserName', randomName);\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: pm.environment.get(\"baseURL\") + \"/users\",\r",
+											"    method: 'POST',\r",
+											"    header: {\r",
+											"        'Content-Type': 'application/json'\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: 'raw',\r",
+											"        raw: JSON.stringify({\r",
+											"            Name: randomName\r",
+											"        })\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (!err && (res.code === 200 || res.code === 201)) {\r",
+											"        const user = res.json();\r",
+											"        console.log(\"Created user:\", user);\r",
+											"        pm.environment.set('createdUserId', user.id);\r",
+											"    } else {\r",
+											"        console.error(\"User creation failed:\", err);\r",
+											"        throw new Error(\"User creation failed\");\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response has user with correct ID\", function () {\r",
+											"    const jsonData = pm.response.json();\r",
+											"    pm.expect(jsonData).to.have.property(\"id\", parseInt(pm.environment.get('createdUserId')));\r",
+											"    pm.expect(jsonData).to.have.property(\"name\", pm.environment.get('createdUserName'));\r",
+											"});\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: pm.environment.get(\"url\") + \"/users/\" + pm.environment.get('createdUserId'),\r",
+											"    method: 'DELETE'\r",
+											"}, function (err, res) {\r",
+											"    if (!err && (res.code === 200 || res.code === 204)) {\r",
+											"        console.log(\"Test user deleted successfully.\");\r",
+											"    } else {\r",
+											"        console.warn(\"Failed to delete test user:\", err);\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseURL}}/users/{{createdUserId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"users",
+										"{{createdUserId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get User by non-existing ID",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const randomNonExistingUserId = Math.floor(Math.random() * 900000) + 100000;\r",
+											"\r",
+											"pm.environment.set('nonExistingUserId', randomNonExistingUserId);\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 404 or 400\", function () {\r",
+											"    pm.expect(pm.response.code).to.be.oneOf([400, 404]);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response contains error message\", function () {\r",
+											"    let jsonData;\r",
+											"    try {\r",
+											"        jsonData = pm.response.json();\r",
+											"        pm.expect(jsonData).to.have.property('error').that.is.a('string');\r",
+											"    } catch (e) {\r",
+											"        pm.expect.fail(\"Response is not a valid JSON or no 'error' property.\");\r",
+											"    }\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseURL}}/users/{{nonExistingUserId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"users",
+										"{{nonExistingUserId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get User by Invalid ID",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"function randomString(length) {\r",
+											"    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';\r",
+											"    let result = '';\r",
+											"    for(let i = 0; i < length; i++) {\r",
+											"        result += chars.charAt(Math.floor(Math.random() * chars.length));\r",
+											"    }\r",
+											"    return result;\r",
+											"}\r",
+											"\r",
+											"const len = Math.floor(Math.random() * 5) + 1;\r",
+											"const randId = randomString(len);\r",
+											"\r",
+											"pm.environment.set('invalidUserId', randId);\r",
+											"console.log(\"Generated invalidUserId:\", randId);\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 400\", function () {\r",
+											"    pm.expect(pm.response.code).to.eql(400);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response contains validation error for 'id'\", function () {\r",
+											"    try {\r",
+											"        const jsonData = pm.response.json();\r",
+											"        pm.expect(jsonData).to.have.property('id').that.is.an('array').that.is.not.empty;\r",
+											"\r",
+											"        const errorMsg = jsonData.id[0];\r",
+											"        pm.expect(errorMsg).to.be.a('string');\r",
+											"        pm.expect(errorMsg).to.include('not valid');\r",
+											"\r",
+											"        const invalidId = pm.environment.get('invalidUserId');\r",
+											"        pm.expect(errorMsg).to.include(invalidId);\r",
+											"\r",
+											"    } catch (e) {\r",
+											"        console.log(\"Raw response text:\", pm.response.text());\r",
+											"        pm.expect.fail(\"Response is not valid JSON or missing 'id' error array.\");\r",
+											"    }\r",
+											"});\r",
+											"\r",
+											"pm.environment.unset('invalidUserId');\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseURL}}/users/{{invalidUserId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"users",
+										"{{invalidUserId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get all users",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", () => {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response is an array\", () => {\r",
+											"    const jsonData = pm.response.json();\r",
+											"    pm.expect(jsonData).to.be.an('array');\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Users have required properties\", () => {\r",
+											"    const users = pm.response.json();\r",
+											"    if (users.length > 0) {\r",
+											"        const user = users[0];\r",
+											"        pm.expect(user).to.have.property('id');\r",
+											"        pm.expect(user).to.have.property('name');\r",
+											"        pm.expect(user).to.have.property('booksTaken');\r",
+											"    } else {\r",
+											"        console.warn(\"Users list is empty\");\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseURL}}/users/",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"users",
+										""
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "POSTs",
+					"item": [
+						{
+							"name": "Create user with valid data",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const randomSuffix = Math.floor(Math.random() * 100000);\r",
+											"const randomName = `TestUser_${randomSuffix}`;\r",
+											"\r",
+											"pm.environment.set('createdUserName', randomName);"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 201 or 200\", () => {\r",
+											"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r",
+											"});\r",
+											"\r",
+											"let createdUser;\r",
+											"try {\r",
+											"    createdUser = pm.response.json();\r",
+											"    pm.expect(createdUser).to.have.property('id').that.is.a('number');\r",
+											"    pm.expect(createdUser).to.have.property('name', pm.environment.get('createdUserName'));\r",
+											"} catch (e) {\r",
+											"    pm.test(\"Response is valid JSON with id and name\", () => { throw e; });\r",
+											"    return;\r",
+											"}\r",
+											"\r",
+											"const userId = createdUser.id;\r",
+											"const userName = createdUser.name;\r",
+											"\r",
+											"pm.environment.set('createdUserId', userId);\r",
+											"pm.environment.set('createdUserName', userName);\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: pm.environment.get(\"url\") + \"/users/\" + userId,\r",
+											"    method: 'GET',\r",
+											"    header: {\r",
+											"        'Content-Type': 'application/json'\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    pm.test(\"GET user by ID status code is 200\", () => {\r",
+											"        pm.expect(err).to.be.null;\r",
+											"        pm.expect(res).to.have.property('code', 200);\r",
+											"    });\r",
+											"\r",
+											"    let getUser;\r",
+											"    try {\r",
+											"        getUser = res.json();\r",
+											"        pm.test(\"GET response user id matches created user id\", () => {\r",
+											"            pm.expect(getUser).to.have.property('id', userId);\r",
+											"        });\r",
+											"        pm.test(\"GET response user name matches created user name\", () => {\r",
+											"            pm.expect(getUser).to.have.property('name', userName);\r",
+											"        });\r",
+											"    } catch (e) {\r",
+											"        pm.test(\"GET response is valid JSON with correct user data\", () => { throw e; });\r",
+											"    }\r",
+											"\r",
+											"    pm.sendRequest({\r",
+											"        url: pm.environment.get(\"url\") + \"/users/\" + userId,\r",
+											"        method: 'DELETE'\r",
+											"    }, function (delErr, delRes) {\r",
+											"        pm.test(\"Cleanup: User deleted successfully\", () => {\r",
+											"            pm.expect(delErr).to.be.null;\r",
+											"            pm.expect(delRes.code).to.be.oneOf([200, 204]);\r",
+											"        });\r",
+											"\r",
+											"        pm.environment.unset('createdUserId');\r",
+											"        pm.environment.unset('createdUserName');\r",
+											"    });\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"name\": \"{{createdUserName}}\"\r\n}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/users/",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"users",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create user with missing 'name' field",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 400\", () => {\r",
+											"    pm.expect(pm.response.code).to.eql(400);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response contains validation error for 'name'\", () => {\r",
+											"    let jsonData;\r",
+											"    try {\r",
+											"        jsonData = pm.response.json();\r",
+											"    } catch (e) {\r",
+											"        pm.expect.fail(\"Response is not a valid JSON\");\r",
+											"    }\r",
+											"\r",
+											"    pm.expect(jsonData).to.have.property('name');\r",
+											"    pm.expect(jsonData.name).to.be.an('array').that.is.not.empty;\r",
+											"    pm.expect(jsonData.name[0]).to.be.a('string').that.includes('required');\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"packages": {},
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/users/",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"users",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create user with empty 'name' field",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 400 for empty 'Name'\", () => {\r",
+											"    pm.expect(pm.response.code).to.eql(400);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response contains validation error for empty or missing 'Name'\", () => {\r",
+											"    let jsonData;\r",
+											"    try {\r",
+											"        jsonData = pm.response.json();\r",
+											"    } catch (e) {\r",
+											"        pm.expect.fail(\"Response is not a valid JSON\");\r",
+											"    }\r",
+											"\r",
+											"    pm.expect(jsonData).to.have.property('name');\r",
+											"    pm.expect(jsonData.name).to.be.an('array').that.is.not.empty;\r",
+											"\r",
+											"    const errorMsg = jsonData.name[0].toLowerCase();\r",
+											"\r",
+											"    pm.expect(errorMsg).to.include.oneOf([\"empty\", \"required\", \"missing\"]);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"Name\": \"\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/users",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"users"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create user with 'name' > 100 chars",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 400 for 'Name' exceeding 100 characters\", () => {\r",
+											"    pm.expect(pm.response.code).to.eql(400);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response contains validation error for 'Name' length limit\", () => {\r",
+											"    let jsonData;\r",
+											"    try {\r",
+											"        jsonData = pm.response.json();\r",
+											"    } catch (e) {\r",
+											"        pm.expect.fail(\"Response is not a valid JSON\");\r",
+											"    }\r",
+											"\r",
+											"    pm.expect(jsonData).to.have.property('name');\r",
+											"    pm.expect(jsonData.name).to.be.an('array').that.is.not.empty;\r",
+											"\r",
+											"    const errorMsg = jsonData.name[0].toLowerCase();\r",
+											"\r",
+											"    pm.expect(errorMsg).to.include.oneOf([\"up to 100\", \"maximum\", \"exceed\"]);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"function generateRandomString(length) {\r",
+											"    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';\r",
+											"    let result = '';\r",
+											"    for (let i = 0; i < length; i++) {\r",
+											"        result += chars.charAt(Math.floor(Math.random() * chars.length));\r",
+											"    }\r",
+											"    return result;\r",
+											"}\r",
+											"\r",
+											"const longRandomName = generateRandomString(105);\r",
+											"\r",
+											"pm.environment.set('createdUserName', longRandomName);\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n\t\"Name\": \"{{createdUserName}}\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/users",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"users"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "PUTs",
+					"item": [
+						{
+							"name": "Update user with valid data",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const createSuffix = Math.floor(Math.random() * 100000);\r",
+											"const createName = `TestUser_${createSuffix}`;\r",
+											"pm.environment.set('createdUserName', createName);\r",
+											"\r",
+											"const updateSuffix = Math.floor(Math.random() * 100000);\r",
+											"const updateName = `UpdatedUser_${updateSuffix}`;\r",
+											"pm.environment.set('updateUserName', updateName);\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: pm.environment.get(\"baseURL\") + \"/users\",\r",
+											"    method: 'POST',\r",
+											"    header: {\r",
+											"        'Content-Type': 'application/json'\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: 'raw',\r",
+											"        raw: JSON.stringify({ Name: createName })\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (!err && (res.code === 200 || res.code === 201)) {\r",
+											"        const user = res.json();\r",
+											"        console.log(\"Created user:\", user);\r",
+											"        pm.environment.set('createdUserId', user.id);\r",
+											"    } else {\r",
+											"        console.error(\"User creation failed:\", err || res.status);\r",
+											"        throw new Error(\"User creation failed\");\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200 or 201\", () => {\r",
+											"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"User updated correctly\", () => {\r",
+											"    let jsonData;\r",
+											"    try {\r",
+											"        jsonData = pm.response.json();\r",
+											"    } catch (e) {\r",
+											"        pm.expect.fail(\"Response is not a valid JSON\");\r",
+											"    }\r",
+											"    \r",
+											"    pm.expect(jsonData).to.have.property('id', parseInt(pm.environment.get('createdUserId')));\r",
+											"    pm.expect(jsonData).to.have.property('name', 'updateUserName');\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n\t\"Name\": \"{{updateUserName}}\"\r\n}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/users/{{createdUserId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"users",
+										"{{createdUserId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update user with non-existing ID",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const randomNonExistingUserId = Math.floor(Math.random() * 900000) + 100000;\r",
+											"\r",
+											"pm.environment.set('nonExistingUserId', randomNonExistingUserId);\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 404 or 400 for non-existing ID\", function () {\r",
+											"    pm.expect(pm.response.code).to.be.oneOf([400, 404]);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response contains error message for invalid ID\", function () {\r",
+											"    let jsonData;\r",
+											"    try {\r",
+											"        jsonData = pm.response.json();\r",
+											"        pm.expect(jsonData).to.have.property('error').that.is.a('string');\r",
+											"    } catch (e) {\r",
+											"        pm.expect.fail(\"Response is not a valid JSON or missing 'error' property.\");\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n\t\"Name\": \"{{updateUserName}}\"\r\n}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/users/{{nonExistingUserId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"users",
+										"{{nonExistingUserId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update user with invalid ID",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"function randomString(length) {\r",
+											"    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';\r",
+											"    let result = '';\r",
+											"    for(let i = 0; i < length; i++) {\r",
+											"        result += chars.charAt(Math.floor(Math.random() * chars.length));\r",
+											"    }\r",
+											"    return result;\r",
+											"}\r",
+											"\r",
+											"const len = Math.floor(Math.random() * 5) + 1;\r",
+											"const randId = randomString(len);\r",
+											"\r",
+											"pm.environment.set('invalidUserId', randId);\r",
+											"console.log(\"Generated invalidUserId:\", randId);\r",
+											"\r",
+											"const updateSuffix = Math.floor(Math.random() * 100000);\r",
+											"const updateName = `UpdatedUser_${updateSuffix}`;\r",
+											"pm.environment.set('updateUserName', updateName);\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 400 for invalid ID format\", function () {\r",
+											"    pm.expect(pm.response.code).to.eql(400);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response contains validation error for 'id'\", function () {\r",
+											"    let jsonData;\r",
+											"    try {\r",
+											"        jsonData = pm.response.json();\r",
+											"        pm.expect(jsonData).to.have.property('id').that.is.an('array');\r",
+											"        pm.expect(jsonData.id[0]).to.include(\"not valid\");\r",
+											"    } catch (e) {\r",
+											"        pm.expect.fail(\"Response is not a valid JSON or missing validation errors for 'id'.\");\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n\t\"Name\": \"{{updateUserName}}\"\r\n}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/users/{{invalidUserId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"users",
+										"{{invalidUserId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update user with invalid missing 'name' field",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 400\", function () {\r",
+											"    pm.expect(pm.response.code).to.eql(400);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response contains validation error for missing 'Name'\", function () {\r",
+											"    let jsonData;\r",
+											"    try {\r",
+											"        jsonData = pm.response.json();\r",
+											"        pm.expect(jsonData).to.have.property('Name').that.is.an('array');\r",
+											"        pm.expect(jsonData.Name[0].toLowerCase()).to.include('required');\r",
+											"    } catch (e) {\r",
+											"        pm.expect.fail(\"Response is not valid JSON or missing 'Name' validation error.\");\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const createSuffix = Math.floor(Math.random() * 100000);\r",
+											"const createName = `TestUser_${createSuffix}`;\r",
+											"pm.environment.set('createdUserName', createName);\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: pm.environment.get(\"baseURL\") + \"/users\",\r",
+											"    method: 'POST',\r",
+											"    header: {\r",
+											"        'Content-Type': 'application/json'\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: 'raw',\r",
+											"        raw: JSON.stringify({ Name: createName })\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (!err && (res.code === 200 || res.code === 201)) {\r",
+											"        const user = res.json();\r",
+											"        console.log(\"Created user:\", user);\r",
+											"        pm.environment.set('createdUserId', user.id);\r",
+											"    } else {\r",
+											"        console.error(\"User creation failed:\", err || res.status);\r",
+											"        throw new Error(\"User creation failed\");\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/users/{{createdUserId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"users",
+										"{{createdUserId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update user with empty 'name' field",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const createSuffix = Math.floor(Math.random() * 100000);\r",
+											"const createName = `TestUser_${createSuffix}`;\r",
+											"pm.environment.set('createdUserName', createName);\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: pm.environment.get(\"baseURL\") + \"/users\",\r",
+											"    method: 'POST',\r",
+											"    header: {\r",
+											"        'Content-Type': 'application/json'\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: 'raw',\r",
+											"        raw: JSON.stringify({ Name: createName })\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (!err && (res.code === 200 || res.code === 201)) {\r",
+											"        const user = res.json();\r",
+											"        console.log(\"Created user:\", user);\r",
+											"        pm.environment.set('createdUserId', user.id);\r",
+											"    } else {\r",
+											"        console.error(\"User creation failed:\", err || res.status);\r",
+											"        throw new Error(\"User creation failed\");\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 400\", function () {\r",
+											"    pm.expect(pm.response.code).to.eql(400);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response contains validation error for empty 'Name'\", function () {\r",
+											"    let jsonData;\r",
+											"    try {\r",
+											"        jsonData = pm.response.json();\r",
+											"        pm.expect(jsonData).to.have.property('Name').that.is.an('array');\r",
+											"        pm.expect(jsonData.Name[0].toLowerCase()).to.include('empty').or.include('required');\r",
+											"    } catch (e) {\r",
+											"        pm.expect.fail(\"Response is not valid JSON or missing 'Name' validation error.\");\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n\t\"Name\": \"\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/users/{{createdUserId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"users",
+										"{{createdUserId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update user with 'name' > 100 chars",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"function generateRandomString(length) {\r",
+											"    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';\r",
+											"    let result = '';\r",
+											"    for (let i = 0; i < length; i++) {\r",
+											"        result += chars.charAt(Math.floor(Math.random() * chars.length));\r",
+											"    }\r",
+											"    return result;\r",
+											"}\r",
+											"\r",
+											"const longRandomName = generateRandomString(105);\r",
+											"\r",
+											"pm.environment.set('createdUserName', longRandomName);\r",
+											"\r",
+											"\r",
+											"const createSuffix = Math.floor(Math.random() * 100000);\r",
+											"const createName = `TestUser_${createSuffix}`;\r",
+											"pm.environment.set('createdUserName', createName);\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: pm.environment.get(\"baseURL\") + \"/users\",\r",
+											"    method: 'POST',\r",
+											"    header: {\r",
+											"        'Content-Type': 'application/json'\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: 'raw',\r",
+											"        raw: JSON.stringify({ Name: createName })\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (!err && (res.code === 200 || res.code === 201)) {\r",
+											"        const user = res.json();\r",
+											"        console.log(\"Created user:\", user);\r",
+											"        pm.environment.set('createdUserId', user.id);\r",
+											"    } else {\r",
+											"        console.error(\"User creation failed:\", err || res.status);\r",
+											"        throw new Error(\"User creation failed\");\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 400\", function () {\r",
+											"    pm.expect(pm.response.code).to.eql(400);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response contains validation error for 'Name' exceeding length\", function () {\r",
+											"    let jsonData;\r",
+											"    try {\r",
+											"        jsonData = pm.response.json();\r",
+											"        pm.expect(jsonData).to.have.property('Name').that.is.an('array');\r",
+											"        pm.expect(jsonData.Name[0].toLowerCase()).to.include('length').or.include('exceed');\r",
+											"    } catch (e) {\r",
+											"        pm.expect.fail(\"Response is not valid JSON or missing 'Name' validation error.\");\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n\t\"Name\": \"{{createdUserName}}\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/users/{{createdUserId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"users",
+										"{{createdUserId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "DELETEs",
+					"item": [
+						{
+							"name": "Delete user with valid data",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const createSuffix = Math.floor(Math.random() * 100000);\r",
+											"const createName = `TestUser_${createSuffix}`;\r",
+											"pm.environment.set('createdUserName', createName);\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: pm.environment.get(\"baseURL\") + \"/users\",\r",
+											"    method: 'POST',\r",
+											"    header: {\r",
+											"        'Content-Type': 'application/json'\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: 'raw',\r",
+											"        raw: JSON.stringify({ Name: createName })\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (!err && (res.code === 200 || res.code === 201)) {\r",
+											"        const user = res.json();\r",
+											"        console.log(\"Created user:\", user);\r",
+											"        pm.environment.set('createdUserId', user.id);\r",
+											"    } else {\r",
+											"        console.error(\"User creation failed:\", err || res.status);\r",
+											"        throw new Error(\"User creation failed\");\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200 or 204\", function () {\r",
+											"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
+											"});\r",
+											"\r",
+											"const deletedUserId = pm.environment.get(\"createdUserId\");\r",
+											"\r",
+											"if (deletedUserId) {\r",
+											"    pm.sendRequest({\r",
+											"        url: pm.environment.get(\"url\") + \"/users/\" + deletedUserId,\r",
+											"        method: 'GET',\r",
+											"        header: {\r",
+											"            'Content-Type': 'application/json'\r",
+											"        }\r",
+											"    }, function (err, res) {\r",
+											"        pm.test(\"User no longer exists (GET after DELETE)\", function () {\r",
+											"            pm.expect(res.code).to.be.oneOf([400, 404]);\r",
+											"        });\r",
+											"\r",
+											"        pm.test(\"GET after delete returns error or empty\", function () {\r",
+											"            if (res.headers.get(\"Content-Type\")?.includes(\"application/json\")) {\r",
+											"                const responseData = res.json();\r",
+											"                pm.expect(responseData).to.be.an(\"object\");\r",
+											"                pm.expect(Object.keys(responseData).length).to.be.above(0);\r",
+											"            }\r",
+											"        });\r",
+											"\r",
+											"        pm.environment.unset(\"createdUserId\");\r",
+											"    });\r",
+											"}\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{baseURL}}/users/{{createdUserId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"users",
+										"{{createdUserId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete a user with non-existing ID",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const randomNonExistingUserId = Math.floor(Math.random() * 900000) + 100000;\r",
+											"\r",
+											"pm.environment.set('nonExistingUserId', randomNonExistingUserId);\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 404 or 400 for non-existing user\", function () {\r",
+											"    pm.expect(pm.response.code).to.be.oneOf([400, 404]);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Error message is returned for non-existing user\", function () {\r",
+											"    const contentType = pm.response.headers.get(\"Content-Type\") || \"\";\r",
+											"    \r",
+											"    if (contentType.includes(\"application/json\")) {\r",
+											"        const json = pm.response.json();\r",
+											"        pm.expect(json).to.be.an(\"object\");\r",
+											"        pm.expect(Object.keys(json).length).to.be.above(0);\r",
+											"    } else {\r",
+											"        pm.expect(pm.response.text().toLowerCase()).to.include(\"not found\")\r",
+											"            .or.include(\"invalid\")\r",
+											"            .or.include(\"error\");\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{baseURL}}/users/{{nonExistingUserId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"users",
+										"{{nonExistingUserId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete user with Invalid ID",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"function randomString(length) {\r",
+											"    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';\r",
+											"    let result = '';\r",
+											"    for(let i = 0; i < length; i++) {\r",
+											"        result += chars.charAt(Math.floor(Math.random() * chars.length));\r",
+											"    }\r",
+											"    return result;\r",
+											"}\r",
+											"\r",
+											"const len = Math.floor(Math.random() * 5) + 1;\r",
+											"const randId = randomString(len);\r",
+											"\r",
+											"pm.environment.set('invalidUserId', randId);\r",
+											"console.log(\"Generated invalidUserId:\", randId);\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 400\", function () {\r",
+											"    pm.expect(pm.response.code).to.eql(400);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response contains validation error for 'id'\", function () {\r",
+											"    try {\r",
+											"        const jsonData = pm.response.json();\r",
+											"        pm.expect(jsonData).to.have.property('id').that.is.an('array').that.is.not.empty;\r",
+											"\r",
+											"        const errorMsg = jsonData.id[0];\r",
+											"        pm.expect(errorMsg).to.be.a('string');\r",
+											"        pm.expect(errorMsg).to.include('not valid');\r",
+											"\r",
+											"        const invalidId = pm.environment.get('invalidUserId');\r",
+											"        pm.expect(errorMsg).to.include(invalidId);\r",
+											"\r",
+											"    } catch (e) {\r",
+											"        console.log(\"Raw response text:\", pm.response.text());\r",
+											"        pm.expect.fail(\"Response is not valid JSON or missing 'id' error array.\");\r",
+											"    }\r",
+											"});\r",
+											"\r",
+											"pm.environment.unset('invalidUserId');\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{baseURL}}/users/{{invalidUserId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"users",
+										"{{invalidUserId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Books",
+			"item": [
+				{
+					"name": "GETs",
+					"item": [
+						{
+							"name": "Get All Books",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response is an array\", function () {\r",
+											"    const jsonData = pm.response.json();\r",
+											"    pm.expect(jsonData).to.be.an('array');\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Each book has the required fields with correct types\", function () {\r",
+											"    const books = pm.response.json();\r",
+											"    books.forEach(book => {\r",
+											"        pm.expect(book).to.have.property(\"id\").that.is.a(\"number\");\r",
+											"        pm.expect(book).to.have.property(\"name\").that.is.a(\"string\");\r",
+											"        pm.expect(book).to.have.property(\"author\").that.is.a(\"string\");\r",
+											"        pm.expect(book).to.have.property(\"genre\").that.is.a(\"string\");\r",
+											"        pm.expect(book).to.have.property(\"quontity\").that.is.a(\"number\");\r",
+											"        pm.expect(book).to.have.property(\"booksTaken\").that.is.an(\"array\");\r",
+											"    });\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{baseURL}}/books/",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"books",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get a Book by Valid ID",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"function randomString(length) {\r",
+											"    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ';\r",
+											"    let result = '';\r",
+											"    for (let i = 0; i < length; i++) {\r",
+											"        result += chars.charAt(Math.floor(Math.random() * chars.length));\r",
+											"    }\r",
+											"    return result.trim();\r",
+											"}\r",
+											"\r",
+											"const newBook = {\r",
+											"    name: `Book_${randomString(10)}`,\r",
+											"    author: `Author_${randomString(8)}`,\r",
+											"    genre: `Genre_${randomString(6)}`,\r",
+											"    quontity: Math.floor(Math.random() * 10) + 1\r",
+											"};\r",
+											"\r",
+											"pm.environment.set('newBookName', newBook.name);\r",
+											"pm.environment.set('newBookAuthor', newBook.author);\r",
+											"pm.environment.set('newBookGenre', newBook.genre);\r",
+											"pm.environment.set('newBookQuantity', newBook.quontity);\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: pm.environment.get('baseURL') + '/books',\r",
+											"    method: 'POST',\r",
+											"    header: {\r",
+											"        'Content-Type': 'application/json'\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: 'raw',\r",
+											"        raw: JSON.stringify(newBook)\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (err || (res.code !== 200 && res.code !== 201)) {\r",
+											"        console.error('Book creation failed:', err || res.text());\r",
+											"        throw new Error('Failed to create Book');\r",
+											"    }\r",
+											"\r",
+											"    const booksArray = res.json();\r",
+											"    const name = pm.environment.get('newBookName');\r",
+											"    const author = pm.environment.get('newBookAuthor');\r",
+											"    const genre = pm.environment.get('newBookGenre');\r",
+											"    const quantity = parseInt(pm.environment.get('newBookQuantity'), 10);\r",
+											"\r",
+											"    const createdBook = booksArray.find(book =>\r",
+											"        book.name === name &&\r",
+											"        book.author === author &&\r",
+											"        book.genre === genre &&\r",
+											"        book.quontity === quantity\r",
+											"    );\r",
+											"\r",
+											"    if (!createdBook) {\r",
+											"        console.error(\"Created book not found in response array.\");\r",
+											"        throw new Error(\"Failed to match created book in response array.\");\r",
+											"    }\r",
+											"\r",
+											"    pm.environment.set('createdBookId', createdBook.id);\r",
+											"    console.log('Created Book ID:', createdBook.id);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", () => {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response has correct book data\", () => {\r",
+											"    const book = pm.response.json();\r",
+											"    pm.expect(book).to.have.property('id', parseInt(pm.environment.get('createdBookId')));\r",
+											"    pm.expect(book).to.have.property('name').that.is.a('string').and.is.not.empty;\r",
+											"    pm.expect(book).to.have.property('author').that.is.a('string').and.is.not.empty;\r",
+											"    pm.expect(book).to.have.property('genre').that.is.a('string').and.is.not.empty;\r",
+											"    pm.expect(book).to.have.property('quontity').that.is.a('number');\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{baseURL}}/books/{{createdBookId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"books",
+										"{{createdBookId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get a Book by non-existing ID",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const randomNonExistingBookId = Math.floor(Math.random() * 900000) + 100000;\r",
+											"\r",
+											"pm.environment.set('nonExistingBookId', randomNonExistingBookId);\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Should return 404 Not Found for non-existing book ID\", function () {\r",
+											"    pm.expect(pm.response.code).to.be.oneOf([404, 400]);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{baseURL}}/books/{{nonExistingBookId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"books",
+										"{{nonExistingBookId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get a Book by Invalid ID",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"function randomString(length) {\r",
+											"    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';\r",
+											"    let result = '';\r",
+											"    for(let i = 0; i < length; i++) {\r",
+											"        result += chars.charAt(Math.floor(Math.random() * chars.length));\r",
+											"    }\r",
+											"    return result;\r",
+											"}\r",
+											"\r",
+											"const len = Math.floor(Math.random() * 5) + 1;\r",
+											"const randId = randomString(len);\r",
+											"\r",
+											"pm.environment.set('invalidBookId', randId);\r",
+											"console.log(\"Generated invalidBookId:\", randId);\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 400\", function () {\r",
+											"    pm.expect(pm.response.code).to.eql(400);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response contains validation error for 'id'\", function () {\r",
+											"    try {\r",
+											"        const jsonData = pm.response.json();\r",
+											"        pm.expect(jsonData).to.have.property('id').that.is.an('array').that.is.not.empty;\r",
+											"\r",
+											"        const errorMsg = jsonData.id[0];\r",
+											"        pm.expect(errorMsg).to.be.a('string');\r",
+											"        pm.expect(errorMsg).to.include('not valid');\r",
+											"\r",
+											"        const invalidId = pm.environment.get('invalidBookId');\r",
+											"        pm.expect(errorMsg).to.include(invalidId);\r",
+											"\r",
+											"    } catch (e) {\r",
+											"        console.log(\"Raw response text:\", pm.response.text());\r",
+											"        pm.expect.fail(\"Response is not valid JSON or missing 'id' error array.\");\r",
+											"    }\r",
+											"});\r",
+											"\r",
+											"pm.environment.unset('invalidBookId');\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{baseURL}}/books/{{invalidBookId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"books",
+										"{{invalidBookId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "POSTs",
+					"item": [
+						{
+							"name": "Create a Book with 'name' > 250",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"function randomString(length) {\r",
+											"    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ';\r",
+											"    let result = '';\r",
+											"    for (let i = 0; i < length; i++) {\r",
+											"        result += chars.charAt(Math.floor(Math.random() * chars.length));\r",
+											"    }\r",
+											"    return result.trim();\r",
+											"}\r",
+											"\r",
+											"// Generate values\r",
+											"const longName = \"Book_\" + randomString(255);\r",
+											"const author = \"Author_\" + randomString(50);\r",
+											"const genre = \"Genre_\" + randomString(30);\r",
+											"const quantity = Math.floor(Math.random() * 10) + 1;\r",
+											"\r",
+											"// Set environment variables\r",
+											"pm.environment.set(\"bookNameTooLong\", longName);\r",
+											"pm.environment.set(\"validAuthor\", author);\r",
+											"pm.environment.set(\"validGenre\", genre);\r",
+											"pm.environment.set(\"validQuantity\", quantity);\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Should return 400 or appropriate validation error\", function () {\r",
+											"    pm.expect(pm.response.code).to.be.oneOf([400, 422]);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Should include validation message about name length\", function () {\r",
+											"    const res = pm.response.json();\r",
+											"    const body = JSON.stringify(res).toLowerCase();\r",
+											"    pm.expect(body).to.include(\"name\").and.to.include(\"250\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"name\": \"{{bookNameTooLong}}\",\r\n  \"author\": \"{{validAuthor}}\",\r\n  \"genre\": \"{{validGenre}}\",\r\n  \"quontity\": {{validQuantity}}\r\n}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/books",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"books"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create a Book with 'author' > 100",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"function randomString(length) {\r",
+											"    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ';\r",
+											"    let result = '';\r",
+											"    for (let i = 0; i < length; i++) {\r",
+											"        result += chars.charAt(Math.floor(Math.random() * chars.length));\r",
+											"    }\r",
+											"    return result.trim();\r",
+											"}\r",
+											"\r",
+											"const longName = \"Book_\" + randomString(5);\r",
+											"const author = \"Author_\" + randomString(110);\r",
+											"const genre = \"Genre_\" + randomString(5);\r",
+											"const quantity = Math.floor(Math.random() * 10) + 1;\r",
+											"\r",
+											"pm.environment.set(\"validBookName\", longName);\r",
+											"pm.environment.set(\"authorToLong\", author);\r",
+											"pm.environment.set(\"validGenre\", genre);\r",
+											"pm.environment.set(\"validQuantity\", quantity);\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 400 for author length validation\", function () {\r",
+											"    pm.expect(pm.response.code).to.eql(400);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response includes validation message about author length\", function () {\r",
+											"    const body = pm.response.json();\r",
+											"    const bodyStr = JSON.stringify(body).toLowerCase();\r",
+											"    pm.expect(bodyStr).to.include('author').and.to.include('100');\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"name\": \"{{validBookName}}\",\r\n  \"author\": \"{{authorToLong}}\",\r\n  \"genre\": \"{{validGenre}}\",\r\n  \"quontity\": {{validQuantity}}\r\n}\r\n"
+								},
+								"url": {
+									"raw": "{{baseURL}}/books",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"books"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create a Book with 'genre' > 50",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"function randomString(length) {\r",
+											"    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ';\r",
+											"    let result = '';\r",
+											"    for (let i = 0; i < length; i++) {\r",
+											"        result += chars.charAt(Math.floor(Math.random() * chars.length));\r",
+											"    }\r",
+											"    return result.trim();\r",
+											"}\r",
+											"\r",
+											"const longName = \"Book_\" + randomString(5);\r",
+											"const author = \"Author_\" + randomString(5);\r",
+											"const genre = \"Genre_\" + randomString(55);\r",
+											"const quantity = Math.floor(Math.random() * 10) + 1;\r",
+											"\r",
+											"pm.environment.set(\"validBookName\", longName);\r",
+											"pm.environment.set(\"authorToLong\", author);\r",
+											"pm.environment.set(\"genreToLong\", genre);\r",
+											"pm.environment.set(\"validQuantity\", quantity);\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 400 for genre length validation\", function () {\r",
+											"    pm.expect(pm.response.code).to.eql(400);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response includes validation message about genre length\", function () {\r",
+											"    const body = pm.response.json();\r",
+											"    const bodyStr = JSON.stringify(body).toLowerCase();\r",
+											"    pm.expect(bodyStr).to.include('genre').and.to.include('50');\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"name\": \"{{validBookName}}\",\r\n  \"author\": \"{{validAuthor}}\",\r\n  \"genre\": \"{{genreToLong}}\",\r\n  \"quontity\": {{validQuantity}}\r\n}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/books",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"books"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create a Book with empty fields",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 400 for empty fields\", function () {\r",
+											"    pm.expect(pm.response.code).to.eql(400);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Validation errors include empty field messages\", function () {\r",
+											"    const res = pm.response.json();\r",
+											"    const resStr = JSON.stringify(res).toLowerCase();\r",
+											"\r",
+											"    pm.expect(resStr).to.include(\"name\");\r",
+											"    pm.expect(resStr).to.include(\"author\");\r",
+											"    pm.expect(resStr).to.include(\"genre\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"name\": \"\",\r\n  \"author\": \"\",\r\n  \"genre\": \"\",\r\n  \"quontity\": \"\"\r\n}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/books",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"books"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create a Book with valid data",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"function randomString(length) {\r",
+											"    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ';\r",
+											"    let result = '';\r",
+											"    for (let i = 0; i < length; i++) {\r",
+											"        result += chars.charAt(Math.floor(Math.random() * chars.length));\r",
+											"    }\r",
+											"    return result.trim();\r",
+											"}\r",
+											"\r",
+											"const book = {\r",
+											"    name: `Book_${randomString(20)}`,\r",
+											"    author: `Author_${randomString(15)}`,\r",
+											"    genre: `Genre_${randomString(10)}`,\r",
+											"    quontity: Math.floor(Math.random() * 5) + 1\r",
+											"};\r",
+											"\r",
+											"pm.environment.set(\"newBookPayload\", JSON.stringify(book));\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200 or 201\", function () {\r",
+											"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r",
+											"});\r",
+											"\r",
+											"const res = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Response is an array\", function () {\r",
+											"    pm.expect(res).to.be.an('array');\r",
+											"});\r",
+											"\r",
+											"const newBook = JSON.parse(pm.environment.get(\"newBookPayload\"));\r",
+											"\r",
+											"const matchedBook = res.find(b =>\r",
+											"    b.name === newBook.name &&\r",
+											"    b.author === newBook.author &&\r",
+											"    b.genre === newBook.genre &&\r",
+											"    b.quontity === newBook.quontity\r",
+											");\r",
+											"\r",
+											"pm.test(\"Created book is found in response array\", function () {\r",
+											"    pm.expect(matchedBook).to.not.be.undefined;\r",
+											"    pm.expect(matchedBook).to.have.property(\"id\");\r",
+											"});\r",
+											"\r",
+											"if (matchedBook) {\r",
+											"    pm.environment.set(\"createdBookId\", matchedBook.id);\r",
+											"\r",
+											"    pm.sendRequest({\r",
+											"        url: pm.environment.get(\"url\") + \"/books/\" + matchedBook.id,\r",
+											"        method: \"DELETE\"\r",
+											"    }, function (err, res) {\r",
+											"        pm.test(\"Cleanup - Book deleted\", function () {\r",
+											"            pm.expect(res.code).to.be.oneOf([200, 204]);\r",
+											"        });\r",
+											"    });\r",
+											"} else {\r",
+											"    console.error(\"Created book not found in response array.\");\r",
+											"    throw new Error(\"Failed to match created book in response array.\");\r",
+											"}\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{{newBookPayload}}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/books",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"books"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "UPDATEs",
+					"item": [
+						{
+							"name": "Update Book with valid Data",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"function randomString(length) {\r",
+											"    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ';\r",
+											"    let result = '';\r",
+											"    for (let i = 0; i < length; i++) {\r",
+											"        result += chars.charAt(Math.floor(Math.random() * chars.length));\r",
+											"    }\r",
+											"    return result.trim();\r",
+											"}\r",
+											"\r",
+											"const originalBook = {\r",
+											"    name: `Book_${randomString(8)}`,\r",
+											"    author: `Author_${randomString(6)}`,\r",
+											"    genre: `Genre_${randomString(4)}`,\r",
+											"    quontity: Math.floor(Math.random() * 5) + 1\r",
+											"};\r",
+											"\r",
+											"const updatedBook = {\r",
+											"    name: `Book_${randomString(10)}_Updated`,\r",
+											"    author: `Author_${randomString(8)}_Updated`,\r",
+											"    genre: `Genre_${randomString(6)}_Updated`,\r",
+											"    quontity: Math.floor(Math.random() * 5) + 6\r",
+											"};\r",
+											"\r",
+											"pm.environment.set(\"bookUpdatePayload\", JSON.stringify(updatedBook));\r",
+											"pm.environment.set(\"originalBookPayload\", JSON.stringify(originalBook));\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: pm.environment.get(\"baseURL\") + \"/books\",\r",
+											"    method: \"POST\",\r",
+											"    header: {\r",
+											"        \"Content-Type\": \"application/json\"\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: \"raw\",\r",
+											"        raw: JSON.stringify(originalBook)\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (err || (res.code !== 200 && res.code !== 201)) {\r",
+											"        console.error(\"Failed to create book\", err || res.text());\r",
+											"        throw new Error(\"Failed to create book\");\r",
+											"    }\r",
+											"\r",
+											"    const books = res.json();\r",
+											"    const matchedBook = Array.isArray(books)\r",
+											"        ? books.find(b =>\r",
+											"            b.name === originalBook.name &&\r",
+											"            b.author === originalBook.author &&\r",
+											"            b.genre === originalBook.genre &&\r",
+											"            b.quontity === originalBook.quontity\r",
+											"        )\r",
+											"        : books;\r",
+											"\r",
+											"    if (!matchedBook || !matchedBook.id) {\r",
+											"        console.error(\"Could not match the created book from response array.\");\r",
+											"        throw new Error(\"Created book not found in response.\");\r",
+											"    }\r",
+											"\r",
+											"    pm.environment.set(\"createdBookId\", matchedBook.id);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200 or 204\", function () {\r",
+											"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
+											"});\r",
+											"\r",
+											"const updatedData = JSON.parse(pm.environment.get(\"bookUpdatePayload\"));\r",
+											"const bookId = pm.environment.get(\"bookIdToUpdate\");\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: pm.environment.get(\"url\") + \"/books/\" + bookId,\r",
+											"    method: \"GET\"\r",
+											"}, function (err, res) {\r",
+											"    if (err) {\r",
+											"        console.error(\"Follow-up GET failed\", err);\r",
+											"        return;\r",
+											"    }\r",
+											"\r",
+											"    const book = res.json();\r",
+											"\r",
+											"    pm.test(\"Book update verified by follow-up GET\", function () {\r",
+											"        pm.expect(book.name).to.eql(updatedData.name);\r",
+											"        pm.expect(book.author).to.eql(updatedData.author);\r",
+											"        pm.expect(book.genre).to.eql(updatedData.genre);\r",
+											"        pm.expect(book.quontity).to.eql(updatedData.quontity);\r",
+											"    });\r",
+											"\r",
+											"    pm.sendRequest({\r",
+											"        url: pm.environment.get(\"url\") + \"/books/\" + bookId,\r",
+											"        method: \"DELETE\"\r",
+											"    }, function (err, res) {\r",
+											"        pm.test(\"Cleanup - Book deleted\", function () {\r",
+											"            pm.expect(res.code).to.be.oneOf([200, 204]);\r",
+											"        });\r",
+											"    });\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{{bookUpdatePayload}}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/books/{{createdBookId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"books",
+										"{{createdBookId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Book with non-existing ID",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const randomNonExistingBookId = Math.floor(Math.random() * 900000) + 100000;\r",
+											"pm.environment.set(\"nonExistingBookId\", randomNonExistingBookId);\r",
+											"\r",
+											"function randomString(length) {\r",
+											"    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ';\r",
+											"    let result = '';\r",
+											"    for (let i = 0; i < length; i++) {\r",
+											"        result += chars.charAt(Math.floor(Math.random() * chars.length));\r",
+											"    }\r",
+											"    return result.trim();\r",
+											"}\r",
+											"\r",
+											"const updatePayload = {\r",
+											"    name: `Book_${randomString(10)}_Updated`,\r",
+											"    author: `Author_${randomString(8)}_Updated`,\r",
+											"    genre: `Genre_${randomString(6)}_Updated`,\r",
+											"    quontity: Math.floor(Math.random() * 5) + 6\r",
+											"};\r",
+											"\r",
+											"pm.environment.set(\"bookUpdatePayload\", JSON.stringify(updatePayload));\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Should return 404 or 400 for non-existing book\", function () {\r",
+											"    pm.expect(pm.response.code).to.be.oneOf([400, 404]);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response contains appropriate error message\", function () {\r",
+											"    const resText = pm.response.text().toLowerCase();\r",
+											"    pm.expect(resText).to.include(\"not\").and.to.include(\"found\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{{bookUpdatePayload}}\r\n"
+								},
+								"url": {
+									"raw": "{{baseURL}}/books/{{nonExistingBookId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"books",
+										"{{nonExistingBookId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Book with invalid ID",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"function randomString(length) {\r",
+											"    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ';\r",
+											"    let result = '';\r",
+											"    for (let i = 0; i < length; i++) {\r",
+											"        result += chars.charAt(Math.floor(Math.random() * chars.length));\r",
+											"    }\r",
+											"    return result.trim();\r",
+											"}\r",
+											"\r",
+											"const invalidBookId = `invalid-id-${randomString(5)}@@@`;\r",
+											"pm.environment.set(\"invalidBookId\", invalidBookId);\r",
+											"\r",
+											"const validUpdatePayload = {\r",
+											"    name: `Book_${randomString(10)}`,\r",
+											"    author: `Author_${randomString(8)}`,\r",
+											"    genre: `Genre_${randomString(6)}`,\r",
+											"    quontity: Math.floor(Math.random() * 10) + 1\r",
+											"};\r",
+											"\r",
+											"pm.environment.set(\"updateBookPayload\", JSON.stringify(validUpdatePayload));\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Should return 400 or 404 for invalid ID format\", function () {\r",
+											"    pm.expect(pm.response.code).to.be.oneOf([400, 404]);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response contains validation error for 'id'\", function () {\r",
+											"    let jsonData;\r",
+											"    try {\r",
+											"        jsonData = pm.response.json();\r",
+											"        pm.expect(jsonData).to.have.property('id').that.is.an('array');\r",
+											"        pm.expect(jsonData.id[0]).to.include(\"not valid\");\r",
+											"    } catch (e) {\r",
+											"        pm.expect.fail(\"Response is not a valid JSON or missing validation errors for 'id'.\");\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{{bookUpdatePayload}}\r\n"
+								},
+								"url": {
+									"raw": "{{baseURL}}/books/{{invalidBookId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"books",
+										"{{invalidBookId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Book with 'name' > 250",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"function randomString(length) {\r",
+											"    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ';\r",
+											"    let result = '';\r",
+											"    for (let i = 0; i < length; i++) {\r",
+											"        result += chars.charAt(Math.floor(Math.random() * chars.length));\r",
+											"    }\r",
+											"    return result.trim();\r",
+											"}\r",
+											"\r",
+											"const newBook = {\r",
+											"    name: `Book_${randomString(10)}`,\r",
+											"    author: `Author_${randomString(8)}`,\r",
+											"    genre: `Genre_${randomString(6)}`,\r",
+											"    quontity: Math.floor(Math.random() * 5) + 1\r",
+											"};\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: pm.environment.get(\"baseURL\") + \"/books\",\r",
+											"    method: \"POST\",\r",
+											"    header: {\r",
+											"        \"Content-Type\": \"application/json\"\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: \"raw\",\r",
+											"        raw: JSON.stringify(newBook)\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (err || (res.code !== 200 && res.code !== 201)) {\r",
+											"        console.error(\"Failed to create book:\", err || res.text());\r",
+											"        throw new Error(\"Failed to create book\");\r",
+											"    }\r",
+											"\r",
+											"    const booksArray = res.json();\r",
+											"\r",
+											"    const createdBook = booksArray.find(b =>\r",
+											"        b.name === newBook.name &&\r",
+											"        b.author === newBook.author &&\r",
+											"        b.genre === newBook.genre &&\r",
+											"        b.quontity === newBook.quontity\r",
+											"    );\r",
+											"\r",
+											"    if (!createdBook) {\r",
+											"        console.error(\"Created book not found in response array.\");\r",
+											"        throw new Error(\"Failed to match created book in response array.\");\r",
+											"    }\r",
+											"\r",
+											"    pm.environment.set(\"createdBookId\", createdBook.id);\r",
+											"\r",
+											"    const invalidName = randomString(251);\r",
+											"    const validAuthor = randomString(50);\r",
+											"    const validGenre = randomString(30);\r",
+											"\r",
+											"    const updatePayload = {\r",
+											"        name: invalidName,\r",
+											"        author: validAuthor,\r",
+											"        genre: validGenre,\r",
+											"        quontity: 1\r",
+											"    };\r",
+											"\r",
+											"    pm.environment.set(\"updateBookPayload\", JSON.stringify(updatePayload));\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 400\", () => {\r",
+											"    pm.expect(pm.response.code).to.eql(400);\r",
+											"});\r",
+											"\r",
+											"const res = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Response contains validation error about name length\", () => {\r",
+											"    pm.expect(res).to.have.property(\"name\");\r",
+											"    pm.expect(res.name[0].toLowerCase()).to.include(\"250\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{{bookUpdatePayload}}\r\n"
+								},
+								"url": {
+									"raw": "{{baseURL}}/books/{{createdBookId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"books",
+										"{{createdBookId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Book with 'author' > 100",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"function randomString(length) {\r",
+											"    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ';\r",
+											"    let result = '';\r",
+											"    for (let i = 0; i < length; i++) {\r",
+											"        result += chars.charAt(Math.floor(Math.random() * chars.length));\r",
+											"    }\r",
+											"    return result.trim();\r",
+											"}\r",
+											"\r",
+											"const newBook = {\r",
+											"    name: `Book_${randomString(10)}`,\r",
+											"    author: `Author_${randomString(8)}`,\r",
+											"    genre: `Genre_${randomString(6)}`,\r",
+											"    quontity: Math.floor(Math.random() * 5) + 1\r",
+											"};\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: pm.environment.get(\"baseURL\") + \"/books\",\r",
+											"    method: \"POST\",\r",
+											"    header: {\r",
+											"        \"Content-Type\": \"application/json\"\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: \"raw\",\r",
+											"        raw: JSON.stringify(newBook)\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (err || (res.code !== 200 && res.code !== 201)) {\r",
+											"        console.error(\"Failed to create book:\", err || res.text());\r",
+											"        throw new Error(\"Failed to create book\");\r",
+											"    }\r",
+											"\r",
+											"    const booksArray = res.json();\r",
+											"\r",
+											"    const createdBook = booksArray.find(b =>\r",
+											"        b.name === newBook.name &&\r",
+											"        b.author === newBook.author &&\r",
+											"        b.genre === newBook.genre &&\r",
+											"        b.quontity === newBook.quontity\r",
+											"    );\r",
+											"\r",
+											"    if (!createdBook) {\r",
+											"        console.error(\"Created book not found in response array.\");\r",
+											"        throw new Error(\"Failed to match created book in response array.\");\r",
+											"    }\r",
+											"\r",
+											"    pm.environment.set(\"createdBookId\", createdBook.id);\r",
+											"\r",
+											"    const invalidName = randomString(10);\r",
+											"    const validAuthor = randomString(101);\r",
+											"    const validGenre = randomString(30);\r",
+											"\r",
+											"    const updatePayload = {\r",
+											"        name: invalidName,\r",
+											"        author: validAuthor,\r",
+											"        genre: validGenre,\r",
+											"        quontity: 1\r",
+											"    };\r",
+											"\r",
+											"    pm.environment.set(\"updateBookPayload\", JSON.stringify(updatePayload));\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 400\", () => {\r",
+											"    pm.expect(pm.response.code).to.eql(400);\r",
+											"});\r",
+											"\r",
+											"const res = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Response contains validation error about name length\", () => {\r",
+											"    pm.expect(res).to.have.property(\"author\");\r",
+											"    pm.expect(res.name[0].toLowerCase()).to.include(\"100\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{{bookUpdatePayload}}\r\n"
+								},
+								"url": {
+									"raw": "{{baseURL}}/books/{{createdBookId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"books",
+										"{{createdBookId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Book with 'genre' > 50",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"function randomString(length) {\r",
+											"    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ';\r",
+											"    let result = '';\r",
+											"    for (let i = 0; i < length; i++) {\r",
+											"        result += chars.charAt(Math.floor(Math.random() * chars.length));\r",
+											"    }\r",
+											"    return result.trim();\r",
+											"}\r",
+											"\r",
+											"const newBook = {\r",
+											"    name: `Book_${randomString(10)}`,\r",
+											"    author: `Author_${randomString(8)}`,\r",
+											"    genre: `Genre_${randomString(6)}`,\r",
+											"    quontity: Math.floor(Math.random() * 5) + 1\r",
+											"};\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: pm.environment.get(\"baseURL\") + \"/books\",\r",
+											"    method: \"POST\",\r",
+											"    header: {\r",
+											"        \"Content-Type\": \"application/json\"\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: \"raw\",\r",
+											"        raw: JSON.stringify(newBook)\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (err || (res.code !== 200 && res.code !== 201)) {\r",
+											"        console.error(\"Failed to create book:\", err || res.text());\r",
+											"        throw new Error(\"Failed to create book\");\r",
+											"    }\r",
+											"\r",
+											"    const booksArray = res.json();\r",
+											"\r",
+											"    const createdBook = booksArray.find(b =>\r",
+											"        b.name === newBook.name &&\r",
+											"        b.author === newBook.author &&\r",
+											"        b.genre === newBook.genre &&\r",
+											"        b.quontity === newBook.quontity\r",
+											"    );\r",
+											"\r",
+											"    if (!createdBook) {\r",
+											"        console.error(\"Created book not found in response array.\");\r",
+											"        throw new Error(\"Failed to match created book in response array.\");\r",
+											"    }\r",
+											"\r",
+											"    pm.environment.set(\"createdBookId\", createdBook.id);\r",
+											"\r",
+											"    const invalidName = randomString(10);\r",
+											"    const validAuthor = randomString(10);\r",
+											"    const validGenre = randomString(55);\r",
+											"\r",
+											"    const updatePayload = {\r",
+											"        name: invalidName,\r",
+											"        author: validAuthor,\r",
+											"        genre: validGenre,\r",
+											"        quontity: 1\r",
+											"    };\r",
+											"\r",
+											"    pm.environment.set(\"updateBookPayload\", JSON.stringify(updatePayload));\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 400\", () => {\r",
+											"    pm.expect(pm.response.code).to.eql(400);\r",
+											"});\r",
+											"\r",
+											"const res = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Response contains validation error about name length\", () => {\r",
+											"    pm.expect(res).to.have.property(\"genre\");\r",
+											"    pm.expect(res.name[0].toLowerCase()).to.include(\"50\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{{bookUpdatePayload}}\r\n"
+								},
+								"url": {
+									"raw": "{{baseURL}}/books/{{createdBookId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"books",
+										"{{createdBookId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "DELETEs",
+					"item": [
+						{
+							"name": "Delete Book with valid data",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"function randomString(length) {\r",
+											"    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ';\r",
+											"    let result = '';\r",
+											"    for (let i = 0; i < length; i++) {\r",
+											"        result += chars.charAt(Math.floor(Math.random() * chars.length));\r",
+											"    }\r",
+											"    return result.trim();\r",
+											"}\r",
+											"\r",
+											"const newBook = {\r",
+											"    name: `Book_${randomString(10)}`,\r",
+											"    author: `Author_${randomString(8)}`,\r",
+											"    genre: `Genre_${randomString(6)}`,\r",
+											"    quontity: Math.floor(Math.random() * 10) + 1\r",
+											"};\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: pm.environment.get(\"baseURL\") + \"/books\",\r",
+											"    method: \"POST\",\r",
+											"    header: {\r",
+											"        \"Content-Type\": \"application/json\"\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: \"raw\",\r",
+											"        raw: JSON.stringify(newBook)\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (err || (res.code !== 200 && res.code !== 201)) {\r",
+											"        console.error('Book creation failed:', err || res.text());\r",
+											"        throw new Error('Failed to create Book');\r",
+											"    } else {\r",
+											"        const booksArray = res.json();\r",
+											"        const createdBook = booksArray.find(book =>\r",
+											"            book.name === newBook.name &&\r",
+											"            book.author === newBook.author &&\r",
+											"            book.genre === newBook.genre &&\r",
+											"            book.quontity === newBook.quontity\r",
+											"        );\r",
+											"\r",
+											"        if (createdBook) {\r",
+											"            pm.environment.set('createdBookId', createdBook.id);\r",
+											"        } else {\r",
+											"            console.error(\"Created book not found in response array.\");\r",
+											"            throw new Error(\"Failed to find created book in response\");\r",
+											"        }\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200 or 204\", function () {\r",
+											"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Verify book is deleted by trying to get it\", function () {\r",
+											"    pm.sendRequest({\r",
+											"        url: pm.environment.get(\"baseURL\") + \"/books/\" + pm.environment.get(\"createdBookId\"),\r",
+											"        method: \"GET\"\r",
+											"    }, function (err, res) {\r",
+											"        pm.expect(res.code).to.be.oneOf([404, 400]);\r",
+											"    });\r",
+											"});\r",
+											"\r",
+											"pm.environment.unset('createdBookId');\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseURL}}/books/{{createdBookId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"books",
+										"{{createdBookId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Book with non-existing ID",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const randomNonExistingBookId = Math.floor(Math.random() * 900000) + 100000;\r",
+											"pm.environment.set('nonExistingBookId', randomNonExistingBookId);\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code indicates Not Found or Bad Request\", function () {\r",
+											"    pm.expect(pm.response.code).to.be.oneOf([400, 404]);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response contains appropriate error message\", function () {\r",
+											"    const res = pm.response.json();\r",
+											"    const bodyStr = JSON.stringify(res).toLowerCase();\r",
+											"    pm.expect(bodyStr).to.include.oneOf([\"not found\", \"does not exist\", \"invalid\"]);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseURL}}/books/{{nonExistingBookId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"books",
+										"{{nonExistingBookId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Book with Invalid ID",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"function randomString(length) {\r",
+											"    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';\r",
+											"    let result = '';\r",
+											"    for(let i = 0; i < length; i++) {\r",
+											"        result += chars.charAt(Math.floor(Math.random() * chars.length));\r",
+											"    }\r",
+											"    return result;\r",
+											"}\r",
+											"\r",
+											"const len = Math.floor(Math.random() * 5) + 1;\r",
+											"const randId = randomString(len);\r",
+											"\r",
+											"pm.environment.set('invalidBookId', randId);\r",
+											"console.log(\"Generated invalidBookId:\", randId);\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 400 Bad Request\", function () {\r",
+											"    pm.expect(pm.response.code).to.eql(400);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response contains validation error for ID\", function () {\r",
+											"    const res = pm.response.json();\r",
+											"    pm.expect(res).to.have.property('id');\r",
+											"    pm.expect(res.id[0].toLowerCase()).to.include(\"not valid\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseURL}}/books/{{invalidBookId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"books",
+										"{{invalidBookId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "TakeABook",
+			"item": [
+				{
+					"name": "POSTs",
+					"item": [
+						{
+							"name": "Take a Book with valid data",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"function randomString(length) {\r",
+											"    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ';\r",
+											"    let result = '';\r",
+											"    for (let i = 0; i < length; i++) {\r",
+											"        result += chars.charAt(Math.floor(Math.random() * chars.length));\r",
+											"    }\r",
+											"    return result.trim();\r",
+											"}\r",
+											"\r",
+											"const newBook = {\r",
+											"    name: `Book_${randomString(8)}`,\r",
+											"    author: `Author_${randomString(6)}`,\r",
+											"    genre: `Genre_${randomString(4)}`,\r",
+											"    quontity: 2\r",
+											"};\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: pm.environment.get(\"baseURL\") + \"/books\",\r",
+											"    method: \"POST\",\r",
+											"    header: { \"Content-Type\": \"application/json\" },\r",
+											"    body: { mode: \"raw\", raw: JSON.stringify(newBook) }\r",
+											"}, function (err, res) {\r",
+											"    if (err || (res.code !== 200 && res.code !== 201)) {\r",
+											"        throw new Error(\"Book creation failed.\");\r",
+											"    }\r",
+											"\r",
+											"    const books = res.json();\r",
+											"    const createdBook = books.find(book =>\r",
+											"        book.name === newBook.name &&\r",
+											"        book.author === newBook.author &&\r",
+											"        book.genre === newBook.genre\r",
+											"    );\r",
+											"\r",
+											"    if (!createdBook) {\r",
+											"        throw new Error(\"Created book not found.\");\r",
+											"    }\r",
+											"\r",
+											"    pm.environment.set(\"createdBookId\", createdBook.id);\r",
+											"    pm.environment.set(\"initialQuantity\", createdBook.quontity);\r",
+											"    pm.environment.set(\"takeBookPayload\", JSON.stringify({\r",
+											"        userid: 103,\r",
+											"        bookid: createdBook.id\r",
+											"    }));\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.expect(pm.response.code).to.eql(200);\r",
+											"});\r",
+											"\r",
+											"const res = pm.response.json();\r",
+											"const payload = JSON.parse(pm.environment.get(\"takeBookPayload\"));\r",
+											"\r",
+											"pm.test(\"Response is an array\", function () {\r",
+											"    pm.expect(res).to.be.an('array');\r",
+											"});\r",
+											"\r",
+											"pm.test(\"At least one record matches taken book and user\", function () {\r",
+											"    const match = res.find(r => r.userId === payload.userid && r.bookId === payload.bookid);\r",
+											"    pm.expect(match).to.not.be.undefined;\r",
+											"});\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: pm.environment.get(\"baseURL\") + \"/books\",\r",
+											"    method: \"GET\"\r",
+											"}, function (err, response) {\r",
+											"    if (err || response.code !== 200) {\r",
+											"        throw new Error(\"Failed to fetch books.\");\r",
+											"    }\r",
+											"\r",
+											"    const books = response.json();\r",
+											"    const book = books.find(b => b.id === payload.bookid);\r",
+											"    const initialQuantity = parseInt(pm.environment.get(\"initialQuantity\"));\r",
+											"\r",
+											"    pm.test(\"Book quantity has decreased by 1\", function () {\r",
+											"        pm.expect(book).to.not.be.undefined;\r",
+											"        pm.expect(book.quontity).to.eql(initialQuantity - 1);\r",
+											"    });\r",
+											"\r",
+											"    if (book) {\r",
+											"        pm.sendRequest({\r",
+											"            url: `${pm.environment.get(\"baseURL\")}/books/${book.id}`,\r",
+											"            method: \"DELETE\"\r",
+											"        }, function (delErr, delRes) {\r",
+											"            pm.test(\"Cleanup: Book was deleted\", function () {\r",
+											"                pm.expect(delRes.code).to.be.oneOf([200, 204]);\r",
+											"            });\r",
+											"        });\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{{takeBookPayload}}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/getbook",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"getbook"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Take a Book with empty fields",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.environment.set(\"takeBookPayload\", JSON.stringify({\r",
+											"    userid: \"\",\r",
+											"    bookid: \"\"\r",
+											"}));\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be 400 or 422\", function () {\r",
+											"    pm.expect(pm.response.code).to.be.oneOf([400, 422]);\r",
+											"});\r",
+											"\r",
+											"const res = pm.response.json();\r",
+											"pm.test(\"Should include validation errors for empty fields\", function () {\r",
+											"    const body = JSON.stringify(res).toLowerCase();\r",
+											"    pm.expect(body).to.include(\"userid\");\r",
+											"    pm.expect(body).to.include(\"bookid\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{{takeBookPayload}}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/getbook",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"getbook"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Take a Book with missing fields",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.environment.set(\"takeBookPayload\", JSON.stringify({}));\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be 400 or 422\", function () {\r",
+											"    pm.expect(pm.response.code).to.be.oneOf([400, 422]);\r",
+											"});\r",
+											"\r",
+											"const res = pm.response.json();\r",
+											"pm.test(\"Should return validation errors for missing fields\", function () {\r",
+											"    const body = JSON.stringify(res).toLowerCase();\r",
+											"    pm.expect(body).to.include(\"userid\");\r",
+											"    pm.expect(body).to.include(\"bookid\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{{takeBookPayload}}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/getbook",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"getbook"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Take a Book with quantity <= 0",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"function randomString(length) {\r",
+											"    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';\r",
+											"    let result = '';\r",
+											"    for (let i = 0; i < length; i++) {\r",
+											"        result += chars.charAt(Math.floor(Math.random() * chars.length));\r",
+											"    }\r",
+											"    return result;\r",
+											"}\r",
+											"\r",
+											"const bookData = {\r",
+											"    name: \"Book_\" + randomString(6),\r",
+											"    author: \"Author_\" + randomString(4),\r",
+											"    genre: \"Genre_\" + randomString(3),\r",
+											"    quontity: 0\r",
+											"};\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: pm.environment.get(\"baseURL\") + \"/books\",\r",
+											"    method: \"POST\",\r",
+											"    header: {\r",
+											"        \"Content-Type\": \"application/json\"\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: \"raw\",\r",
+											"        raw: JSON.stringify(bookData)\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (err || res.code !== 200 && res.code !== 201) {\r",
+											"        console.error(\"Book creation failed\", err || res.text());\r",
+											"        throw new Error(\"Book creation failed\");\r",
+											"    }\r",
+											"\r",
+											"    const books = res.json();\r",
+											"    const created = books.find(b =>\r",
+											"        b.name === bookData.name &&\r",
+											"        b.author === bookData.author &&\r",
+											"        b.genre === bookData.genre\r",
+											"    );\r",
+											"\r",
+											"    if (!created) throw new Error(\"Could not find the created book in response array.\");\r",
+											"\r",
+											"    pm.environment.set(\"zeroQuantityBookId\", created.id);\r",
+											"    \r",
+											"    pm.environment.set(\"takeBookPayload\", JSON.stringify({\r",
+											"        userid: 1,\r",
+											"        bookid: created.id\r",
+											"    }));\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be 200\", function () {\r",
+											"    pm.expect(pm.response.code).to.eql(200);\r",
+											"});\r",
+											"\r",
+											"const res = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Should not allow taking a book with 0 quantity\", function () {\r",
+											"    pm.expect(res).to.be.an(\"array\");\r",
+											"    pm.expect(res.length).to.eql(0);\r",
+											"});\r",
+											"\r",
+											"const bookId = parseInt(pm.environment.get(\"zeroQuantityBookId\"));\r",
+											"if (!isNaN(bookId)) {\r",
+											"    pm.sendRequest({\r",
+											"        url: `${pm.environment.get(\"baseUrl\")}/books/${bookId}`,\r",
+											"        method: \"DELETE\"\r",
+											"    }, function (err, delRes) {\r",
+											"        pm.test(\"Cleanup: Book with 0 quantity was deleted\", function () {\r",
+											"            pm.expect(delRes.code).to.be.oneOf([200, 204]);\r",
+											"        });\r",
+											"    });\r",
+											"}\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{{takeBookPayload}}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/getbook",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"getbook"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "GETs",
+					"item": [
+						{
+							"name": "Get all Taken Books",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.expect(pm.response.code).to.eql(200);\r",
+											"});\r",
+											"\r",
+											"const res = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Response is an array\", function () {\r",
+											"    pm.expect(res).to.be.an(\"array\");\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Each record has required fields\", function () {\r",
+											"    res.forEach(entry => {\r",
+											"        pm.expect(entry).to.have.property(\"id\");\r",
+											"        pm.expect(entry).to.have.property(\"userId\");\r",
+											"        pm.expect(entry).to.have.property(\"bookId\");\r",
+											"        pm.expect(entry).to.have.property(\"dateTaken\");\r",
+											"    });\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{{takeBookPayload}}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/getbook",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"getbook"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "DELETEs",
+					"item": [
+						{
+							"name": "Return Book by GetBook ID",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"function randomString(length) {\r",
+											"    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ';\r",
+											"    let result = '';\r",
+											"    for (let i = 0; i < length; i++) {\r",
+											"        result += chars.charAt(Math.floor(Math.random() * chars.length));\r",
+											"    }\r",
+											"    return result.trim();\r",
+											"}\r",
+											"\r",
+											"const newBook = {\r",
+											"    name: `Book_${randomString(6)}`,\r",
+											"    author: `Author_${randomString(4)}`,\r",
+											"    genre: `Genre_${randomString(3)}`,\r",
+											"    quontity: 2\r",
+											"};\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: pm.environment.get(\"baseURL\") + \"/books\",\r",
+											"    method: \"POST\",\r",
+											"    header: { \"Content-Type\": \"application/json\" },\r",
+											"    body: {\r",
+											"        mode: \"raw\",\r",
+											"        raw: JSON.stringify(newBook)\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (err || res.code !== 200 && res.code !== 201) {\r",
+											"        console.error(\"Book creation failed\", err || res.text());\r",
+											"        return;\r",
+											"    }\r",
+											"\r",
+											"    const created = res.json().find(b =>\r",
+											"        b.name === newBook.name &&\r",
+											"        b.author === newBook.author &&\r",
+											"        b.genre === newBook.genre &&\r",
+											"        b.quontity === newBook.quontity\r",
+											"    );\r",
+											"\r",
+											"    if (!created) throw new Error(\"Failed to match created book\");\r",
+											"\r",
+											"    pm.environment.set(\"createdBookId\", created.id);\r",
+											"\r",
+											"    const takePayload = {\r",
+											"        userid: 5,\r",
+											"        bookid: created.id\r",
+											"    };\r",
+											"\r",
+											"    pm.environment.set(\"initialQuantity\", created.quontity);\r",
+											"    pm.environment.set(\"takeBookPayload\", JSON.stringify(takePayload));\r",
+											"\r",
+											"    pm.sendRequest({\r",
+											"        url: pm.environment.get(\"baseURL\") + \"/getbook\",\r",
+											"        method: \"POST\",\r",
+											"        header: { \"Content-Type\": \"application/json\" },\r",
+											"        body: {\r",
+											"            mode: \"raw\",\r",
+											"            raw: JSON.stringify(takePayload)\r",
+											"        }\r",
+											"    }, function (takeErr, takeRes) {\r",
+											"        if (takeErr || takeRes.code !== 200) {\r",
+											"            console.error(\"Book take failed\", takeErr || takeRes.text());\r",
+											"            return;\r",
+											"        }\r",
+											"\r",
+											"        const taken = takeRes.json().find(b =>\r",
+											"            b.userId === takePayload.userid && b.bookId === takePayload.bookid\r",
+											"        );\r",
+											"\r",
+											"        if (!taken) throw new Error(\"Failed to find taken book record\");\r",
+											"\r",
+											"        pm.environment.set(\"takenBookId\", taken.id);\r",
+											"    });\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200 or 204\", function () {\r",
+											"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
+											"});\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: pm.environment.get(\"baseURL\") + \"/getbook\",\r",
+											"    method: \"GET\"\r",
+											"}, function (err, res) {\r",
+											"    if (err) throw new Error(\"Failed to fetch taken books\");\r",
+											"    const takenBooks = res.json();\r",
+											"    const takenBookId = parseInt(pm.environment.get(\"takenBookId\"));\r",
+											"\r",
+											"    pm.test(\"Book is removed from taken books list\", function () {\r",
+											"        const stillExists = takenBooks.find(b => b.id === takenBookId);\r",
+											"        pm.expect(stillExists).to.be.undefined;\r",
+											"    });\r",
+											"});\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: pm.environment.get(\"baseURL\") + \"/books\",\r",
+											"    method: \"GET\"\r",
+											"}, function (err, res) {\r",
+											"    if (err) throw new Error(\"Failed to fetch books\");\r",
+											"\r",
+											"    const bookId = parseInt(pm.environment.get(\"createdBookId\"));\r",
+											"    const book = res.json().find(b => b.id === bookId);\r",
+											"    const initialQty = parseInt(pm.environment.get(\"initialQuantity\"));\r",
+											"\r",
+											"    pm.test(\"Book quantity is restored after return\", function () {\r",
+											"        pm.expect(book).to.not.be.undefined;\r",
+											"        pm.expect(book.quontity).to.eql(initialQty);\r",
+											"    });\r",
+											"\r",
+											"    pm.sendRequest({\r",
+											"        url: pm.environment.get(\"baseURL\") + \"/books/\" + bookId,\r",
+											"        method: \"DELETE\"\r",
+											"    }, function (delErr, delRes) {\r",
+											"        if (delErr || delRes.code !== 200 && delRes.code !== 204) {\r",
+											"            console.warn(\"Failed to delete book during cleanup.\");\r",
+											"        } else {\r",
+											"            console.log(\"Cleanup: Book deleted.\");\r",
+											"        }\r",
+											"    });\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{baseURL}}/getbook/{{takenBookId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"getbook",
+										"{{takenBookId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Return Book by non-existing ID",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const nonExistingId = 9999999;\r",
+											"pm.environment.set(\"nonExistingTakenBookId\", nonExistingId);\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 404 or appropriate error\", function () {\r",
+											"    pm.expect(pm.response.code).to.be.oneOf([404, 400]);\r",
+											"});\r",
+											"\r",
+											"const res = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Response contains error message for non-existing id\", function () {\r",
+											"    pm.expect(res).to.be.an(\"object\");\r",
+											"    pm.expect(JSON.stringify(res).toLowerCase()).to.include(\"not found\").or.include(\"does not exist\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{baseURL}}/getbook/{{nonExistingTakenBookId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"getbook",
+										"{{nonExistingTakenBookId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Return Book by invalid ID",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"function randomString(length) {\r",
+											"    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';\r",
+											"    let result = '';\r",
+											"    for(let i = 0; i < length; i++) {\r",
+											"        result += chars.charAt(Math.floor(Math.random() * chars.length));\r",
+											"    }\r",
+											"    return result;\r",
+											"}\r",
+											"\r",
+											"const len = Math.floor(Math.random() * 5) + 1;\r",
+											"const randId = randomString(len);\r",
+											"\r",
+											"pm.environment.set('invalidGetBookId', randId);\r",
+											"console.log(\"Generated invalidGetBookId:\", randId);\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 400 Bad Request\", function () {\r",
+											"    pm.expect(pm.response.code).to.eql(400);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response contains validation error for ID\", function () {\r",
+											"    const res = pm.response.json();\r",
+											"    pm.expect(res).to.have.property('id');\r",
+											"    pm.expect(res.id[0].toLowerCase()).to.include(\"not valid\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{baseURL}}/getbook/{{invalidGetBookId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"getbook",
+										"{{invalidGetBookId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		}
+	]
+}
