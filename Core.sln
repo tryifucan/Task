@@ -9,20 +9,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UI_Tests", "UI_Tests\UI_Tes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "API_Tests", "API_Tests\API_Tests.csproj", "{B4282245-6E22-446C-896A-BA30C0318F38}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
-	ProjectSection(SolutionItems) = preProject
-		..\..\Docs\API_Testplan.docx = ..\..\Docs\API_Testplan.docx
-		..\..\Bugs.docx = ..\..\Bugs.docx
-		..\..\Docs\UI_Testcases.xlsx = ..\..\Docs\UI_Testcases.xlsx
-		..\..\Docs\UI_Testplan.docx = ..\..\Docs\UI_Testplan.docx
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Postman_Collection", "Postman_Collection", "{401C78EB-4129-42CF-B155-B1B2E19267DA}"
-	ProjectSection(SolutionItems) = preProject
-		..\..\postman_environment = ..\..\postman_environment
-		..\..\postman_tests = ..\..\postman_tests
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
