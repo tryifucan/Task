@@ -7,20 +7,20 @@ This repository contains the complete Quality Assurance solution. It includes:
 - A comprehensive Postman collection for API validation with environment variables and tests with validations
 
 ## Repository Structure
-/API_Tests # Automated API integration tests (NUnit, RestSharp, Newtonsoft)
-/UI_Tests # Automated UI tests (NUnit, Selenium)
-/Core # Page Objects, API clients, utilities, config
+- /API_Tests # Automated API integration tests (NUnit, RestSharp, Newtonsoft)
+- /UI_Tests # Automated UI tests (NUnit, Selenium)
+- /Core # Page Objects, API clients, utilities, config
 
 /Core/Docs
-UI_Testcases  # Manual UI test cases
-API_Testplan.docx # API test plan
-UI_Testplan.docx # UI test plan
-Bugs.docx # Reported bugs
+- UI_Testcases  # Manual UI test cases
+- API_Testplan.docx # API test plan
+- UI_Testplan.docx # UI test plan
+- Bugs.docx # Reported bugs
 
 
 /Core/Postman
-postman_tests.json # Postman API test collection
-postman_environment # Postman Environment
+- postman_tests.json # Postman API test collection
+- postman_environment # Postman Environment
 
 **Coverage includes:**
 - Navigation and screen access
